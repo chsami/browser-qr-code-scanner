@@ -1,0 +1,116 @@
+<html lang="en">
+    <head>
+        <script type="text/javascript" src="grid.js"></script>
+        <script type="text/javascript" src="version.js"></script>
+        <script type="text/javascript" src="detector.js"></script>
+        <script type="text/javascript" src="formatinf.js"></script>
+        <script type="text/javascript" src="errorlevel.js"></script>
+        <script type="text/javascript" src="bitmat.js"></script>
+        <script type="text/javascript" src="datablock.js"></script>
+        <script type="text/javascript" src="bmparser.js"></script>
+        <script type="text/javascript" src="datamask.js"></script>
+        <script type="text/javascript" src="rsdecoder.js"></script>
+        <script type="text/javascript" src="gf256poly.js"></script>
+        <script type="text/javascript" src="gf256.js"></script>
+        <script type="text/javascript" src="decoder.js"></script>
+        <script type="text/javascript" src="qrcode.js"></script>
+        <script type="text/javascript" src="findpat.js"></script>
+        <script type="text/javascript" src="alignpat.js"></script>
+        <script type="text/javascript" src="databr.js"></script>
+        <!-- <script src="https://aframe.io/releases/0.9.0/aframe.min.js"></script> -->
+        <!-- <script src="https://unpkg.com/aframe-event-set-component@4.2.1/dist/aframe-event-set-component.min.js"></script> -->
+        <link rel="stylesheet" type="text/css" href="spinner.css" />
+        <style>
+            body {
+                background-color: black;
+            }
+            .hidden {
+                display: none;
+            }
+            video {
+                width: 100% !important;
+                height: auto !important;
+            }
+        </style>
+    </head>
+
+    <body>
+        <div class="video-container">
+            <div id="spinner"></div>
+            <div style="position:absolute; top:0; left:0;">Hello world</div>
+            <video id="video-preview"></video>
+            <canvas id="qr-canvas" class="hidden"></canvas>
+        </div>
+        <script>
+            window.onload = function() {
+                navigator.mediaDevices
+                    .getUserMedia({
+                        audio: false,
+                        video: true
+                    })
+                    .then(stream => {
+                        let $video = document.querySelector('video');
+                        $video.srcObject = stream;
+                        $video.onloadedmetadata = () => {
+                            $video.play();
+                            document
+                                .querySelector('#spinner')
+                                .setAttribute('style', 'opacity: 0;');
+                            setTimeout(() => {
+                                document
+                                    .querySelector('#spinner')
+                                    .setAttribute('style', 'display: none;');
+                            }, 1000);
+                        };
+                        setTimeout(
+                            tick,
+                            100
+                        ); /* We launch the tick function 100ms later (see next step) */
+                    });
+            };
+
+            function tick() {
+                //var video = document.getElementById("video-preview");
+                let video = document.querySelector('video');
+                var qrCanvasElement = document.getElementById('qr-canvas');
+                var qrCanvas = qrCanvasElement.getContext('2d');
+                var width, height;
+
+                if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                    qrCanvasElement.height = video.videoHeight;
+                    qrCanvasElement.width = video.videoWidth;
+                    qrCanvas.drawImage(
+                        video,
+                        0,
+                        0,
+                        qrCanvasElement.width,
+                        qrCanvasElement.height
+                    );
+                    try {
+                        var result = qrcode.decode();
+                        console.log(result);
+                        //window.localStorage.setItem('name', 'Obaseki Nosa');
+                        //window.localStorage.getItem('user');
+                        //window.localStorage.clear();
+                        alert('nice');
+                        /* Video can now be stopped */
+                        video.pause();
+                        video.src = '';
+                        video.srcObject
+                            .getVideoTracks()
+                            .forEach(track => track.stop());
+
+                        /* Display Canvas and hide video stream */
+                        qrCanvasElement.classList.remove('hidden');
+                        video.classList.add('hidden');
+                    } catch (e) {
+                        /* No Op */
+                    }
+                }
+
+                /* If no QR could be decoded from image copied in canvas */
+                if (!video.classList.contains('hidden')) setTimeout(tick, 100);
+            }
+        </script>
+    </body>
+</html>
